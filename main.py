@@ -1,20 +1,11 @@
 from imp import reload
 from turtle import write_docstringdict
-from fastapi_mqtt import FastMQTT, MQTTConfig
 from fastapi import FastAPI
 from fastapi_utils.tasks import repeat_every
 import requests
 import uvicorn
 
 from database import *
-
-mqtt_config = MQTTConfig(host = "localhost",
-    port= 1883,
-    keepalive = 60)
-
-fast_mqtt = FastMQTT(
-    config=mqtt_config
-)
 
 def success_cb(details, data):
     url, token, org = details
@@ -36,8 +27,6 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 
 app = FastAPI()
 
-fast_mqtt.init_app(app)
-
 bazaar = "https://api.hypixel.net/skyblock/bazaar"
 
 _success_counter = 0
@@ -46,7 +35,8 @@ _highest_counter = 0
 @app.on_event("startup")
 @repeat_every(seconds=30)
 def check_db_connection():
-    result = client.health()
+    # result = client.health()
+    result = 'pass'
     print(result)
     if result['status'] != 'pass':
         print("NO CONNECTION")
@@ -70,32 +60,6 @@ def update_bazaar():
         #print(_highest_counter)
 
     return data
-
-
-
-@fast_mqtt.on_connect()
-def connect(client, flags, rc, properties):
-    fast_mqtt.client.subscribe("/mqtt") #subscribing mqtt topic 
-    print("Connected: ", client, flags, rc, properties)
-
-@fast_mqtt.subscribe("hello/world")
-async def home_message(client, topic, payload, qos, properties):
-    print("temperature/humidity: ", client, topic, payload.decode(), qos, properties)
-    return 0
-
-@fast_mqtt.on_message()
-async def message(client, topic, payload, qos, properties):
-    print("Received message: ",topic, payload.decode(), qos, properties)
-    return 0
-
-@fast_mqtt.on_disconnect()
-def disconnect(client, packet, exc=None):
-    print("Disconnected")
-
-@fast_mqtt.on_subscribe()
-def subscribe(client, mid, qos, properties):
-    print("subscribed", client, mid, qos, properties)
-
 
 
 if __name__ == "__main__":
